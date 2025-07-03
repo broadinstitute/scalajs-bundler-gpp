@@ -1,9 +1,9 @@
-val scalaJSVersion = sys.env.getOrElse("SCALAJS_VERSION", "1.3.0")
+val scalaJSVersion = sys.env.getOrElse("SCALAJS_VERSION", "1.19.0")
 
 lazy val `scalajs-bundler-linker` =
   project.in(file("scalajs-bundler-linker"))
     .settings(
-      scalaVersion := "2.12.11",
+      scalaVersion := "2.12.20",
       libraryDependencies += "org.scala-js" %% "scalajs-linker" % scalaJSVersion
     )
 
@@ -13,7 +13,7 @@ val `sbt-scalajs-bundler` =
     .settings(commonSettings)
     .settings(
       description := "Module bundler for Scala.js projects",
-      libraryDependencies += "com.google.jimfs" % "jimfs" % "1.2",
+      libraryDependencies += "com.google.jimfs" % "jimfs" % "1.3.0",
       libraryDependencies += "com.typesafe.play" %% "play-json" % "2.9.4",
       addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
       buildInfoKeys := Seq[BuildInfoKey](version),
@@ -39,7 +39,7 @@ val `sbt-web-scalajs-bundler` =
         val () = (`scalajs-bundler-linker` / publishLocal).value
       },
       description := "Module bundler for Scala.js projects (integration with sbt-web-scalajs)",
-      addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.1.0")
+      addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.3.0")
     )
     .dependsOn(`sbt-scalajs-bundler`)
 
@@ -48,39 +48,10 @@ val `sbt-web-scalajs-bundler` =
 // scalaVersion is not compatible.
 val apiDoc =
   project.in(file("api-doc"))
-    .enablePlugins(ScalaUnidocPlugin)
     .settings(noPublishSettings: _*)
-    .settings(
-      (ScalaUnidoc / unidoc / scalacOptions) ++= Seq(
-        "-groups",
-        "-doc-source-url", s"https://github.com/scalacenter/scalajs-bundler/blob/v${version.value}€{FILE_PATH}.scala",
-        "-sourcepath", (ThisBuild / baseDirectory).value.absolutePath
-      ),
-      (ScalaUnidoc / unidoc / unidocProjectFilter) := inAnyProject -- inProjects(`scalajs-bundler-linker`)
-    )
     .aggregate(`sbt-scalajs-bundler`, `sbt-web-scalajs-bundler`)
 
 val ornateTarget = Def.setting(target.value / "ornate")
-
-val manual =
-  project.in(file("manual"))
-    .enablePlugins(OrnatePlugin)
-    .settings(noPublishSettings: _*)
-    .settings(
-      scalaVersion := "2.12.11",
-      ornateSourceDir := Some(sourceDirectory.value / "ornate"),
-      ornateTargetDir := Some(ornateTarget.value),
-      ornateSettings := Map("version" -> version.value),
-      ornate / siteSubdirName := "",
-      addMappingsToSiteDir(ornate / mappings, ornate / siteSubdirName),
-      ornate / mappings := {
-        val _ = ornate.value
-        val output = ornateTarget.value
-        output ** AllPassFilter --- output pair Path.relativeTo(output)
-      },
-      packageDoc / siteSubdirName := "api/latest",
-      addMappingsToSiteDir(mappings in ScalaUnidoc in packageDoc in apiDoc, packageDoc / siteSubdirName)
-    )
 
 val `scalajs-bundler` =
   project.in(file("."))
@@ -94,7 +65,6 @@ inThisBuild(List(
     "-encoding", "UTF-8",
     "-unchecked",
     "-Xlint",
-    "-Yno-adapted-args",
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
