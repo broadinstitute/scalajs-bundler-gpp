@@ -1,9 +1,9 @@
-val scalaJSVersion = sys.env.getOrElse("SCALAJS_VERSION", "1.19.0")
+val scalaJSVersion = sys.env.getOrElse("SCALAJS_VERSION", "1.20.2")
 
 lazy val `scalajs-bundler-linker` =
   project.in(file("scalajs-bundler-linker"))
     .settings(
-      scalaVersion := "2.12.20",
+      scalaVersion := "2.12.21",
       libraryDependencies += "org.scala-js" %% "scalajs-linker" % scalaJSVersion
     )
 
@@ -13,8 +13,8 @@ val `sbt-scalajs-bundler` =
     .settings(commonSettings)
     .settings(
       description := "Module bundler for Scala.js projects",
-      libraryDependencies += "com.google.jimfs" % "jimfs" % "1.3.0",
-      libraryDependencies += "com.typesafe.play" %% "play-json" % "2.9.4",
+      libraryDependencies += "com.google.jimfs" % "jimfs" % "1.3.1",
+      libraryDependencies += "org.playframework" %% "play-json" % "3.0.6",
       addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
       buildInfoKeys := Seq[BuildInfoKey](version),
       buildInfoPackage := "scalajsbundler.sbtplugin.internal",
@@ -89,13 +89,15 @@ lazy val commonSettings = List(
     "-Dsbt.execute.extrachecks=true" // Avoid any deadlocks.
   ),
   scriptedBufferLog := false,
+  scalaVersion := "2.12.21"
 )
 
 lazy val noPublishSettings =
   Seq(
     publishArtifact := false,
     publish := {},
-    publishLocal := {}
+    publishLocal := {},
+    scalaVersion := "2.12.21"
   )
 
 ThisBuild / ivyLoggingLevel := UpdateLogging.Quiet

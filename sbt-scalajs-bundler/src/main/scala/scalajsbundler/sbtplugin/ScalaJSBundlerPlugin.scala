@@ -4,7 +4,7 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 import org.scalajs.sbtplugin.{ScalaJSPlugin, Stage}
 import sbt.Keys._
 import sbt.{Def, _}
-import scalajsbundler.{BundlerFile, NpmDependencies, Webpack, WebpackDevServer}
+import scalajsbundler.{BundlerFile, NpmDependencies, WebpackDevServer}
 
 import scalajsbundler.ExternalCommand.addPackages
 import scalajsbundler.util.{JSON, ScalaJSNativeLibraries}
@@ -581,7 +581,7 @@ object ScalaJSBundlerPlugin extends AutoPlugin {
     // difference between configurations/stages. This way the
     // API user can modify it just once.
     webpackMonitoredDirectories := Seq(),
-    (includeFilter in webpackMonitoredFiles) := AllPassFilter,
+    (webpackMonitoredFiles / includeFilter) := AllPassFilter,
     webpackExtraArgs := Seq.empty,
     webpackNodeArgs := Seq.empty,
 
@@ -685,11 +685,11 @@ object ScalaJSBundlerPlugin extends AutoPlugin {
 
   private lazy val testSettings: Seq[Setting[_]] =
     Def.settings(
-      npmDependencies ++= (npmDependencies in Compile).value,
+      npmDependencies ++= (Compile / npmDependencies).value,
 
-      npmDevDependencies ++= (npmDevDependencies in Compile).value,
+      npmDevDependencies ++= (Compile / npmDevDependencies).value,
 
-      jsSourceDirectories ++= (jsSourceDirectories in Compile).value,
+      jsSourceDirectories ++= (Compile / jsSourceDirectories).value,
 
       requireJsDomEnv := false,
 
@@ -706,7 +706,7 @@ object ScalaJSBundlerPlugin extends AutoPlugin {
 
     Seq(
       // Ask Scala.js to output its result in our target directory
-      stageTask / crossTarget := (crossTarget in npmUpdate).value,
+      stageTask / crossTarget := (npmUpdate / crossTarget).value,
 
       stageTask / finallyEmitSourceMaps := {
         (stageTask / webpackEmitSourceMaps).?.value
@@ -764,36 +764,10 @@ object ScalaJSBundlerPlugin extends AutoPlugin {
 
       // webpack-dev-server wiring
       stageTask / startWebpackDevServer := Def.task {
-        val extraArgs = (stageTask / webpackDevServerExtraArgs).value
-
-        // This duplicates file layout logic from `Webpack`
-        val targetDir = (stageTask / npmUpdate).value
-        val customConfigOption = (stageTask / webpackConfigFile).value
-        val generatedConfig = (stageTask / scalaJSBundlerWebpackConfig).value
-
-        val config = customConfigOption
-          .map(Webpack.copyCustomWebpackConfigFiles(targetDir, webpackResources.value.get))
-          .getOrElse(generatedConfig.file)
-
-        // To match `webpack` task behavior
-        val workDir = targetDir
-
-        // Server instance is project-level
-        val server = webpackDevServer.value
-        val logger = (stageTask / streams).value.log
-        val globalLogger = state.value.globalLogging.full
-
-/*        server.start(
-          workDir,
-          config,
-          extraArgs,
-          logger,
-          globalLogger
-        )*/
       }.dependsOn(
         // We need to execute the full webpack task once, since it generates
         // the required config file
-        (stageTask / webpack),
+        stageTask / webpack,
 
         npmUpdate
       ).value,
